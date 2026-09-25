@@ -1,0 +1,5 @@
+# Four-branch baseline: magnitude, phase, radial spectrum and band energy.
+base_config: stage1_all.yaml
+task_target: frepdd_clip_vit_b16_ablation_all
+discriminator:
+  enabled_branches: [mag, phase, radial, band]

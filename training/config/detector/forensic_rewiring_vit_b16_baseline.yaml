@@ -1,0 +1,89 @@
+# Baseline from "Forensic Rewiring: Circuit-Level Shortcut Suppression for
+# Generalizable Deepfake Detection". Baseline fine-tuning only: no redirect
+# learning and no data augmentation.
+
+log_dir: ./logs/forensic_rewiring_vit_b16_baseline
+
+# Hugging Face OpenAI CLIP ViT-B/16 + Linear(768, 2).
+model_name: clip
+backbone_name: vit
+clip_model_name: ./training/pretrained/clip-vit-base-patch16
+clip_local_files_only: true
+backbone_config:
+  mode: original
+  num_classes: 2
+  inc: 3
+  dropout: false
+
+# FF++ c23 with the six manipulation families used by the paper:
+# Deepfakes, Face2Face, FaceSwap, NeuralTextures, FaceShifter and DFD.
+all_dataset: [FaceForensics++, FaceShifter, DeepFakeDetection]
+train_dataset: [FaceForensics++, FaceShifter, DeepFakeDetection]
+test_dataset: [FaceForensics++]
+# The generic trainer calls this loader "test"; select the FF++ validation
+# split here so checkpoint selection does not consume the held-out test split.
+test_data_split: val
+compression: c23
+
+# Per DDP process. train.sh launches 2 processes: global batch = 2 x 64 = 128.
+train_batchSize: 64
+test_batchSize: 128
+workers: 8
+frame_num: {train: 32, test: 32}
+resolution: 224
+with_mask: false
+with_landmark: false
+
+# The paper deliberately disables augmentation for its baseline.
+use_data_augmentation: false
+data_aug:
+  flip_prob: 0.0
+  rotate_prob: 0.0
+  rotate_limit: [0, 0]
+  blur_prob: 0.0
+  blur_limit: [3, 3]
+  brightness_prob: 0.0
+  brightness_limit: [0.0, 0.0]
+  contrast_limit: [0.0, 0.0]
+  quality_lower: 100
+  quality_upper: 100
+
+# CLIPImageProcessor normalization constants.
+mean: [0.48145466, 0.4578275, 0.40821073]
+std: [0.26862954, 0.26130258, 0.27577711]
+
+optimizer:
+  type: adamw
+  adamw:
+    lr: 0.00001
+    beta1: 0.9
+    beta2: 0.999
+    eps: 0.00000001
+    weight_decay: 0.01
+    amsgrad: false
+
+# 500 optimizer-step linear warmup followed by cosine decay.
+lr_scheduler: cosine_warmup
+warmup_steps: 500
+min_lr_ratio: 0.0
+
+# DeepfakeBench uses an inclusive final epoch: epochs 0..9 = 10 epochs.
+nEpochs: 9
+start_epoch: 0
+# Optional model-only checkpoint for continued fine-tuning. train.sh can
+# override this with CHECKPOINT_PATH=/path/to/ckpt_best.pth.
+weights_path: null
+save_epoch: 1
+rec_iter: 100
+logdir: ./logs
+manualSeed: 1024
+save_ckpt: true
+save_ckpt_on_ffpp: true
+save_feat: false
+
+loss_func: cross_entropy
+losstype: null
+metric_scoring: auc
+
+cuda: true
+cudnn: true

@@ -1,0 +1,123 @@
+# log dir
+log_dir: ./logs/frepdd_v3
+
+
+# model setting
+train_mode: all   # or "gan"
+pretrained: ./training/pretrained/efficientnet-b4-6ed6700e.pth
+model_name: frepddCg   # model name
+backbone_name: efficientnetb4 # ViT-B/16 classifier for the ablation
+weights_path: "./weights2/ckpt_best.pth"
+  
+#backbone setting
+# backbone_config:
+#   num_classes: 2
+#   image_size: 224
+#   dropout: 0.1
+backbone_config:
+  backbone: original
+  mode: train
+  num_classes: 2
+  inc: 3
+  dropout: false
+  pretrained: true
+  
+
+# dataset
+all_dataset: [FaceForensics++, FF-F2F, FF-DF, FF-FS, FF-NT, FaceShifter, DeepFakeDetection, Celeb-DF-v1, Celeb-DF-v2, DFDCP, DFDC, DeeperForensics-1.0, UADFV]
+train_dataset: [FaceForensics++]
+val_dataset: [Celeb-DF-v1, Celeb-DF-v2, DFDC, DFDCP, WDF]
+test_dataset: [Celeb-DF-v1, Celeb-DF-v2, DFDC, DFDCP, WDF]
+dataset_type: blend
+
+compression: c23  # compression-level for videos
+train_batchSize: 16 # per-GPU batch size; ViT-B/16 uses more memory than EfficientNet-B4
+test_batchSize: 32 # per-GPU test batch size
+workers: 8  # number of data loading workers
+frame_num: {'train': 8, 'test': 32}   # number of frames to use per video in training and testing
+resolution: 256   # resolution of output image to network
+with_mask: false   # whether to include mask information in the input
+with_landmark: false   # whether to include facial landmark information in the input
+save_ckpt: true  # whether to save checkpoint
+save_feat: false   # whether to save features
+
+
+# data augmentation
+use_data_augmentation: True  # Add this flag to enable/disable data augmentation
+data_aug:
+  flip_prob: 0.5
+  rotate_prob: 0.3
+  rotate_limit: [-10, 10]
+  blur_prob: 0.2
+  blur_limit: [3, 7]
+  brightness_limit: [-0.1, 0.1]
+  contrast_limit: [-0.1, 0.1]
+  color_prob: 0.4
+  degradation_prob: 0.6
+  scale_min: 0.5
+  scale_max: 0.9
+  noise_var_limit: [5.0, 30.0]
+  quality_lower: 30
+  quality_upper: 95
+  gamma_prob: 0.15
+  gamma_limit: [85, 115]
+  grayscale_prob: 0.05
+
+# mean and std for normalization
+mean: [0.485, 0.456, 0.406]
+std: [0.229, 0.224, 0.225]
+
+# optimizer config
+optimizer:
+  # choose between 'adam' and 'sgd'
+  type: adam
+  adam:
+    lr: 0.0001  # generator learning rate
+    lr_d: 0.0002  # discriminator LR before built-in /2 (effective ~1e-4, match G)
+    lr_c: 0.00002  # classifier fine-tuning learning rate
+    beta1: 0.5  # beta1 for Adam optimizer
+    beta2: 0.999 # beta2 for Adam optimizer
+    eps: 0.00000001  # epsilon for Adam optimizer
+    weight_decay: 0.0001  # mild regularization for G/D/C
+    amsgrad: false
+  sgd:
+    lr: 0.0002  # learning rate
+    momentum: 0.9  # momentum for SGD optimizer
+    weight_decay: 0.0005  # weight decay for regularization
+  sam:
+    lr: 0.001  # learning rate
+    momentum: 0.9  # momentum for SGD optimizer
+
+# training config
+lr_scheduler: step   # learning rate scheduler step
+lr_step: 10
+lr_gamma: 0.5   # avoid freezing G/D after a few epochs
+nEpochs: 2   # number of epochs to train for
+start_epoch: 0   # manual epoch number (useful for restarts)
+validations_per_epoch: 1  # macro-AUC validation is expensive across five datasets
+save_epoch: 1   # interval epochs for saving models
+rec_iter: 100   # interval iterations for recording
+logdir: ./logs   # folder to output images and logs
+manualSeed: 1024   # manual seed for random number generation
+save_ckpt: true  # whether to save checkpoint
+
+# generator loss weights (favor adversarial over collapse-to-zero)
+d_update_every: 1
+g_adv_weight: 1.0
+g_compression_weight: 0.05
+g_task_weight: 0.0
+band_dropout_prob: 0.2
+pert_budget: 0.02
+
+# loss function
+loss_func: cross_entropy   # loss function to use
+losstype: null
+label_smoothing: 0.05
+
+# metric
+metric_scoring: auc   # metric for evaluation (auc, acc, eer, ap)
+
+# cuda
+
+cuda: true   # whether to use CUDA acceleration
+cudnn: true   # whether to use CuDNN for convolution operations

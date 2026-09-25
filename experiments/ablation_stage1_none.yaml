@@ -1,0 +1,4 @@
+base_config: stage1_all.yaml
+task_target: frepdd_clip_vit_b16_ablation_none
+discriminator:
+  enabled_branches: []

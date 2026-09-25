@@ -1,0 +1,4 @@
+# Evaluation protocol for the magnitude-only discriminator ablation.
+base_config: ablation_stage1_mag.yaml
+test_dataset: [WDF, FaceForensics++_c40]
+test_data_split: test

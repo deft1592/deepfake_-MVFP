@@ -1,0 +1,5 @@
+mode: original
+num_classes: 2
+inc: 3
+dropout: false
+pretrained: true

@@ -1,0 +1,90 @@
+# FreqDebias (CVPR 2025) reproduction for DeepfakeBench.
+log_dir: ./logs/training
+model_name: freqdebias
+num_classes: 2
+#pretrained: ./training/pretrained/resnet34-b627a593.pth
+pretrained: ./weights2/fredebias.pth
+
+# Eq. 10 and Eq. 21 values reported in the paper.
+temperature: 4.0
+eta: 0.5
+delta: 0.1
+mu: 1.0
+rho: 0.1
+vmf_embedding_dim: 256
+class_priors: [0.5, 0.5]
+
+# Fo-Mixup values reported in the paper.
+frequency_clusters: 8
+ohem_top_clusters: 3
+confidence_ratio: 0.5
+
+# The main paper omits these values, so they remain configurable.
+frequency_radial_bins: 8
+frequency_angular_bins: 8
+kmeans_iterations: 8
+amplitude_noise_std: 0.0  # the main paper specifies N(1, 0)
+ohem_chunk_size: 32
+standard_aug_probability: 0.5
+pixelation_scale: 0.5
+
+# For the exact two-stage protocol, set this to a vanilla ResNet-34 detector
+# trained on FF++ for 30 epochs. Null uses detached current model predictions.
+selector_checkpoint: null
+
+all_dataset: [FaceForensics++, FF-F2F, FF-DF, FF-FS, FF-NT, FaceShifter, DeepFakeDetection, Celeb-DF-v1, Celeb-DF-v2, DFDCP, DFDC, DeeperForensics-1.0, UADFV]
+train_dataset: [FaceForensics++]
+test_dataset: [Celeb-DF-v1]
+compression: c23
+train_batchSize: 100  
+test_batchSize:  256
+workers: 8
+frame_num: {train: 32, test: 32}
+resolution: 256
+with_mask: false
+with_landmark: false
+
+use_data_augmentation: true
+data_aug:
+  flip_prob: 0.5
+  rotate_prob: 0.5
+  rotate_limit: [-10, 10]
+  blur_prob: 0.5
+  blur_limit: [3, 7]
+  brightness_prob: 0.5
+  brightness_limit: [-0.1, 0.1]
+  contrast_limit: [-0.1, 0.1]
+  quality_lower: 40
+  quality_upper: 100
+
+mean: [0.5, 0.5, 0.5]
+std: [0.5, 0.5, 0.5]
+
+optimizer:
+  type: adam
+  adam:
+    lr: 0.0001
+    beta1: 0.9
+    beta2: 0.999
+    eps: 0.00000001
+    weight_decay: 0.0005
+    amsgrad: false
+  sgd:
+    lr: 0.0001
+    momentum: 0.9
+    weight_decay: 0.0005
+
+lr_scheduler: null
+nEpochs: 29  # train.py uses an inclusive range: epochs 0..49 are 50 epochs
+start_epoch: 0
+save_epoch: 10
+rec_iter: 100
+logdir: ./logs
+manualSeed: 1024
+save_ckpt: true
+save_feat: true
+loss_func: cross_entropy
+losstype: null
+metric_scoring: auc
+cuda: true
+cudnn: true

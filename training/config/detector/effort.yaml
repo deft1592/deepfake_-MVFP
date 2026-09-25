@@ -1,0 +1,80 @@
+# log dir
+log_dir: ./logs/effort
+
+# model setting
+model_name: effort                                 # registered detector name
+clip_model_name: ./clip-vit-large-patch14     # CLIP VFM (vit-large-patch14 / vit-base-patch16 / vit-huge-patch14)
+principal_ratio: 0.9                               # ratio of singular values frozen as the semantic subspace
+# Linear-layer name substrings that get replaced by OrthogonalLinear.
+# These cover the standard HuggingFace CLIPVisionModel transformer (q/k/v/out + MLP fc1/fc2).
+svd_target_substrings: [q_proj, k_proj, v_proj, out_proj, fc1, fc2]
+
+# dataset
+all_dataset: [FaceForensics++, FF-F2F, FF-DF, FF-FS, FF-NT, FaceShifter, DeepFakeDetection, Celeb-DF-v1, Celeb-DF-v2, DFDCP, DFDC, DeeperForensics-1.0, UADFV]
+train_dataset: [FaceForensics++]
+test_dataset: [Celeb-DF-v1]
+
+compression: c23
+train_batchSize: 32                                # SVD adapter is light, but ViT-L still heavy
+test_batchSize: 256
+workers: 8
+frame_num: {'train': 32, 'test': 32}
+resolution: 224                                    # CLIP ViT default
+with_mask: false
+with_landmark: false
+
+
+# data augmentation
+use_data_augmentation: true
+data_aug:
+  flip_prob: 0.5
+  rotate_prob: 0.5
+  rotate_limit: [-10, 10]
+  blur_prob: 0.5
+  blur_limit: [3, 7]
+  brightness_prob: 0.5
+  brightness_limit: [-0.1, 0.1]
+  contrast_limit: [-0.1, 0.1]
+  quality_lower: 40
+  quality_upper: 100
+
+# CLIP normalization
+mean: [0.48145466, 0.4578275, 0.40821073]
+std: [0.26862954, 0.26130258, 0.27577711]
+
+# optimizer config (only S_r of every OrthogonalLinear is trainable -> tiny params)
+optimizer:
+  type: adam
+  adam:
+    lr: 0.0001
+    beta1: 0.9
+    beta2: 0.999
+    eps: 0.00000001
+    weight_decay: 0.0005
+    amsgrad: false
+  sgd:
+    lr: 0.001
+    momentum: 0.9
+    weight_decay: 0.0005
+
+# training config
+lr_scheduler: null
+nEpochs: 20
+start_epoch: 0
+save_epoch: 1
+rec_iter: 100
+logdir: ./logs
+manualSeed: 1024
+save_ckpt: true
+save_feat: true
+
+# loss function
+loss_func: cross_entropy
+losstype: null
+
+# metric
+metric_scoring: auc
+
+# cuda
+cuda: true
+cudnn: true

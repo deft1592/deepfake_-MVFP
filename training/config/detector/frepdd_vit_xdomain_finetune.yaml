@@ -1,0 +1,109 @@
+# FREPDD ViT-B/16 cross-domain fine-tuning from the best FF++ checkpoint.
+#
+# Protocol:
+#   train:   FF++ only
+#   val:   UADFV (checkpoint selection only)
+#   test:  Celeb-DF-v1/v2 + DFDC (never used for checkpoint selection)
+
+train_mode: task_finetune
+weights_path: ./logs/training/frepddCg_2026-08-09-22-36-26/val/avg/ckpt_best.pth
+validate_before_training: true
+
+pretrained: ./training/pretrained/jx_vit_base_p16_224-80ecf9dd.pth
+model_name: frepddCg
+backbone_name: vit_base_patch16_224
+
+# Preserve generic ViT features: only blocks 9-11, final norm and head are updated.
+backbone_train_scope: last_stage
+freeze_backbone_bn: true
+
+backbone_config:
+  num_classes: 2
+  image_size: 224
+  dropout: 0.2
+
+# Multi-source training and independent cross-domain model selection.
+all_dataset: [FaceForensics++, FF-F2F, FF-DF, FF-FS, FF-NT, FaceShifter, DeepFakeDetection, Celeb-DF-v1, Celeb-DF-v2, DFDCP, DFDC, DeeperForensics-1.0, UADFV]
+train_dataset: [FaceForensics++]
+val_dataset: [UADFV]
+test_dataset: [Celeb-DF-v2, Celeb-DF-v1, DFDC]
+dataset_type: blend
+compression: c23
+train_batchSize: 8
+test_batchSize: 32
+workers: 8
+frame_num: {train: 8, test: 32}
+resolution: 256
+with_mask: false
+with_landmark: false
+save_ckpt: true
+save_feat: false
+
+# Cross-domain augmentation: retain geometry while varying common codec/camera cues.
+use_data_augmentation: true
+data_aug:
+  flip_prob: 0.5
+  rotate_prob: 0.3
+  rotate_limit: [-8, 8]
+  blur_prob: 0.5
+  blur_limit: [3, 7]
+  brightness_prob: 0.5
+  brightness_limit: [-0.15, 0.15]
+  contrast_limit: [-0.15, 0.15]
+  quality_lower: 30
+  quality_upper: 100
+
+mean: [0.485, 0.456, 0.406]
+std: [0.229, 0.224, 0.225]
+
+# Small warm-start learning rates prevent overwriting the epoch-2 solution.
+optimizer:
+  type: adam
+  adam:
+    lr: 0.000002
+    lr_d: 0.000001
+    lr_c: 0.000005
+    beta1: 0.9
+    beta2: 0.999
+    eps: 0.00000001
+    weight_decay: 0.0001
+    amsgrad: false
+  sgd:
+    lr: 0.0002
+    momentum: 0.9
+    weight_decay: 0.0005
+  sam:
+    lr: 0.001
+    momentum: 0.9
+
+lr_scheduler: cosine
+lr_T_max: 9
+lr_eta_min: 0.0000002
+nEpochs: 8
+start_epoch: 0
+validations_per_epoch: 1
+save_epoch: 1
+rec_iter: 100
+logdir: ./logs
+manualSeed: 1024
+
+# Stable generator adaptation: discriminator stays frozen in task_finetune mode.
+g_adv_weight: 0.2
+g_compression_weight: 0.5
+g_task_weight: 0.5
+band_dropout_prob: 0.3
+pert_budget: 0.015
+normalize_compression_loss: true
+
+# FF++ has roughly 4x more fake than real frames.
+class_weights: [2.0, 0.6]
+label_smoothing: 0.05
+early_stop_patience: 4
+early_stop_min_delta: 0.001
+
+loss_func: cross_entropy
+losstype: null
+metric_scoring: auc
+cuda: true
+cudnn: true
+task_target: xdomain_finetune

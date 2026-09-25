@@ -1,0 +1,89 @@
+# log dir
+log_dir: ./logs/freqblender
+
+# model setting
+model_name: freqblender         # registered detector name (FreqBlenderDetector)
+num_classes: 2                  # binary real/fake
+advprop: true                   # EfficientNet-B4 advprop pretraining (matches original FreqBlender)
+
+# Optional: local pretrained EfficientNet-B4 (advprop) backbone weights.
+# If the file is missing, code falls back to online download / random init.
+backbone_weight: ./training/pretrained/adv-efficientnet-b4-44fb3a87.pth
+
+# Optional: released FreqBlender classifier checkpoint (FreqBlender.tar).
+# If provided and exists, weights are loaded after backbone initialization.
+freqblender_ckpt: ./FreqBlender/supplement/FreqBlender.tar
+
+# dataset
+all_dataset: [FaceForensics++, FF-F2F, FF-DF, FF-FS, FF-NT, FaceShifter, DeepFakeDetection, Celeb-DF-v1, Celeb-DF-v2, DFDCP, DFDC, DeeperForensics-1.0, UADFV]
+train_dataset: [FaceForensics++]
+test_dataset: [Celeb-DF-v1]
+
+compression: c23  # compression-level for videos
+train_batchSize: 32   # training batch size (EfficientNet-B4 @ 380 is heavy)
+test_batchSize: 128  # test batch size
+workers: 8   # number of data loading workers
+frame_num: {'train': 32, 'test': 32}   # number of frames per video
+resolution: 380   # FreqBlender uses 380x380 (EfficientNet-B4 native input)
+with_mask: false
+with_landmark: false
+
+
+# data augmentation
+use_data_augmentation: true
+data_aug:
+  flip_prob: 0.5
+  rotate_prob: 0.5
+  rotate_limit: [-10, 10]
+  blur_prob: 0.5
+  blur_limit: [3, 7]
+  brightness_prob: 0.5
+  brightness_limit: [-0.1, 0.1]
+  contrast_limit: [-0.1, 0.1]
+  quality_lower: 40
+  quality_upper: 100
+
+# mean / std normalization.
+# FreqBlender's official inference simply divides pixel values by 255
+# (i.e. the input range is [0, 1]). Setting mean=0, std=1 keeps the
+# tensor in [0, 1] after the dataset's normalization pipeline so that
+# the released checkpoint behaves exactly as in the original repo.
+mean: [0.0, 0.0, 0.0]
+std: [1.0, 1.0, 1.0]
+
+# optimizer config
+optimizer:
+  type: adam
+  adam:
+    lr: 0.0001
+    beta1: 0.9
+    beta2: 0.999
+    eps: 0.00000001
+    weight_decay: 0.0005
+    amsgrad: false
+  sgd:
+    lr: 0.001
+    momentum: 0.9
+    weight_decay: 0.0005
+
+# training config
+lr_scheduler: null
+nEpochs: 30
+start_epoch: 0
+save_epoch: 1
+rec_iter: 100
+logdir: ./logs
+manualSeed: 1024
+save_ckpt: true
+save_feat: true
+
+# loss function
+loss_func: cross_entropy
+losstype: null
+
+# metric
+metric_scoring: auc
+
+# cuda
+cuda: true
+cudnn: true

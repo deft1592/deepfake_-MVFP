@@ -1,0 +1,4 @@
+base_config: stage2_cdfv1_finetune.yaml
+task_target: frepdd_clip_vit_b16_cdfv1_ablation_radial_band
+discriminator:
+  enabled_branches: [radial, band]
