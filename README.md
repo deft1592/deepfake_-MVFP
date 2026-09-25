@@ -1,8 +1,7 @@
-# AAAI27 FREPDD-CLIP reproduction snapshot
+# Deepfake MVFP Implementation
 
-This directory contains the FREPDD-CLIP training code, the reconstructed stage-1
-experiment configuration, dataset metadata, and the scripts needed to reproduce
-training.
+This repository contains the implementation of Deepfake MVFP, including the
+training code, experiment configuration, dataset metadata, and training scripts.
 
 ## Experiments
 
